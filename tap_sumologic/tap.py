@@ -167,6 +167,10 @@ class TapSumoLogic(Tap):
         schema = {}
         q: str = table_config["query"]
         q += " | limit 1"
+        start_date = self.config["start_date"]
+        end_date = self.config["end_date"]
+        time_zone = self.config["time_zone"]
+        base_type = {"type": ["null", "string"]}
 
         self.logger.info("Running query in sumologic to determine table schema.")
         sumo = SumoLogic(
@@ -175,9 +179,9 @@ class TapSumoLogic(Tap):
 
         fields = sumo.get_sumologic_fields(
             q,
-            self.config["start_date"],
-            self.config["end_date"],
-            self.config["time_zone"],
+            start_date,
+            end_date,
+            time_zone,
             table_config["by_receipt_time"],
             table_config["auto_parsing_mode"],
         )
@@ -188,7 +192,7 @@ class TapSumoLogic(Tap):
             field_type = field["fieldType"]
             key_field = field["keyField"]
 
-            schema[field_name] = {"type": ["null", "string"]}
+            schema[field_name] = base_type
 
             if field_type == "int":
                 schema[field_name]["type"].append("integer")
@@ -201,6 +205,11 @@ class TapSumoLogic(Tap):
 
             if key_field:
                 key_properties.append(field_name)
+
+        # add start and end date
+        schema["start_date"] = base_type
+        schema["end_date"] = base_type
+        schema["time_zone"] = base_type
 
         return {
             "type": "object",

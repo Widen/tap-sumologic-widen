@@ -60,6 +60,9 @@ class SearchJobStream(SumoLogicStream):
 
         now_datetime = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")
         custom_columns = {
+            "start_date": self.config["start_date"],
+            "end_date": self.config["end_date"],
+            "time_zone": self.config["time_zone"],
             "_SDC_EXTRACTED_AT": now_datetime,
             "_SDC_BATCHED_AT": now_datetime,
             "_SDC_DELETED_AT": None,
