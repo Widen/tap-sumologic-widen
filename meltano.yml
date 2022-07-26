@@ -28,7 +28,7 @@ plugins:
       end_date: 2022-07-25T00:15:00
       time_zone: UTC
       tables:
-      - table_name: customer_api_calls
+      - table_name: example_table_name
         query: >
           *
           | count by _sourceCategory

@@ -134,7 +134,6 @@ class SumoLogic(object):
         )
 
         status = self.search_job_status(search_job)
-        print(status)
         while status["state"] != "DONE GATHERING RESULTS":
             if status["state"] == "CANCELLED":
                 break
