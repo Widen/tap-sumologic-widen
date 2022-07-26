@@ -1,0 +1,38 @@
+version: 1
+send_anonymous_usage_stats: true
+project_id: 699e335d-5053-449a-9609-4dfe16e4da69
+plugins:
+  extractors:
+  - name: tap-sumologic
+    namespace: tap_sumologic
+    pip_url: -e .
+    capabilities:
+    - state
+    - catalog
+    - discover
+    settings:
+    - name: access_id
+      kind: password
+    - name: access_key
+      kind: password
+    - name: start_date
+      kind: string
+    - name: end_date
+      kind: string
+    - name: time_zone
+      kind: string
+    - name: tables
+      kind: array
+    config:
+      start_date: 2022-07-25T00:00:00
+      end_date: 2022-07-25T00:15:00
+      time_zone: UTC
+      tables:
+      - table_name: customer_api_calls
+        query: >
+          *
+          | count by _sourceCategory
+  loaders:
+  - name: target-jsonl
+    variant: andyh1203
+    pip_url: target-jsonl
