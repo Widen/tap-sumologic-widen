@@ -141,7 +141,7 @@ class TapSumoLogic(Tap):
                     tap=self,
                     name=stream["table_name"],
                     primary_keys=stream.get(
-                        "primary_keys", self.config.get("primary_keys", [])
+                        "primary_keys", self.config.get("primary_keys", schema['key_properties'])
                     ),
                     replication_key=stream.get(
                         "replication_key", self.config.get("replication_key", "")
