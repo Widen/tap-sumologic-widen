@@ -1,5 +1,6 @@
 """sumologic tap class."""
 
+import copy
 import datetime
 import json
 from typing import Dict, List
@@ -192,7 +193,7 @@ class TapSumoLogic(Tap):
             field_type = field["fieldType"]
             key_field = field["keyField"]
 
-            schema[field_name] = base_type
+            schema[field_name] = copy.deepcopy(base_type)
 
             if field_type == "int":
                 schema[field_name]["type"].append("integer")
@@ -210,6 +211,9 @@ class TapSumoLogic(Tap):
         schema["start_date"] = base_type
         schema["end_date"] = base_type
         schema["time_zone"] = base_type
+        schema["_SDC_EXTRACTED_AT"] = base_type
+        schema["_SDC_BATCHED_AT"] = base_type
+        schema["_SDC_DELETED_AT"] = base_type
 
         return {
             "type": "object",
