@@ -211,9 +211,6 @@ class TapSumoLogic(Tap):
         schema["start_date"] = base_type
         schema["end_date"] = base_type
         schema["time_zone"] = base_type
-        schema["_SDC_EXTRACTED_AT"] = base_type
-        schema["_SDC_BATCHED_AT"] = base_type
-        schema["_SDC_DELETED_AT"] = base_type
 
         return {
             "type": "object",
