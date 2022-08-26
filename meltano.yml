@@ -30,27 +30,8 @@ plugins:
       tables:
       - table_name: example_table_name
         query: >
-          (
-          _sourceCategory=widen-kubernetes/wip/wip-api-prod 
-          OR _sourceCategory=widen-kubernetes/users/rattail-prod 
-          OR _sourceCategory=widen-kubernetes/users/dovetail-prod 
-          OR _sourceCategory=widen-kubernetes/dam/dam-*
-          )
-          
-          | json "X-Widen-Context-Mirror-Original-Uri" AS mirror_uri nodrop
-          | if (!(isNull(mirror_uri)), true, false) as is_mirror
-          | where !(isNull(account_name)) AND !(isNull(user_oauth_app)) AND !(isNull(http_response_status))
-          | replace(_sourceCategory, /widen-kubernetes\/dam\/dam-.*/, "widen-kubernetes/dam/dam-*") AS source_category
-          | replace(url_without_params, /https:\/\/.*\.(com|edu|org|studio|net|uk)\//, "*/") AS endpoint
-          | replace(endpoint, /[\w\-]{36}/, "*") AS endpoint
-          | replace(endpoint, /[0-9]{9}/, "*") AS endpoint
-          | replace(endpoint, /\/$/, "") AS endpoint
-          | replace(endpoint, /search\/.*/, "search/*") AS endpoint
-          | replace(endpoint, /categories\/.*/, "categories/*") AS endpoint
-          | replace(endpoint, /metadata\/.*\/vocabulary/, "metadata/*/vocabulary") AS endpoint
-          | replace(endpoint, /metadata\/\*\/vocabulary\/.*/, "metadata/*/vocabulary/*") AS endpoint
-          
-          | count by endpoint, api_major_version, http_response_status, http_request_method, account_name, account_id, user_oauth_app, user_oauth_client, source_category, logger_name, is_mirror
+          *
+          | count by _sourceCategory
   loaders:
   - name: target-jsonl
     variant: andyh1203

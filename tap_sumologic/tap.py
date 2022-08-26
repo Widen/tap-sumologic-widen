@@ -211,6 +211,7 @@ class TapSumoLogic(Tap):
         schema["start_date"] = base_type
         schema["end_date"] = base_type
         schema["time_zone"] = base_type
+        key_properties += ["start_date", "end_date", "time_zone"]
 
         return {
             "type": "object",

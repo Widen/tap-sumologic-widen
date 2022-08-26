@@ -127,8 +127,9 @@ class SumoLogic(object):
     ):
         """Get the fields from a Sumo Logic Search Job."""
         fields = []
-
         delay = 5
+        count = 0
+
         search_job = self.search_job(
             q, from_time, to_time, time_zone, by_receipt_time, auto_parsing_mode
         )
@@ -138,11 +139,14 @@ class SumoLogic(object):
             if status["state"] == "CANCELLED":
                 break
             time.sleep(delay)
+            count += 1
+            if count == 3:  # don't need to wait for all the results
+                break
             status = self.search_job_status(search_job)
 
         self.logger.info(status["state"])
 
-        if status["state"] == "DONE GATHERING RESULTS":
+        if status["state"] in ["DONE GATHERING RESULTS", "GATHERING RESULTS"]:
             response = self.search_job_records(search_job, limit=1)
 
             fields = response["fields"]
