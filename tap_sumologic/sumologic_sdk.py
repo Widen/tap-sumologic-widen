@@ -140,7 +140,7 @@ class SumoLogic(object):
                 break
             time.sleep(delay)
             count += 1
-            if count == 3:  # don't need to wait for all the results
+            if count == 2:  # don't need to wait for all the results
                 break
             status = self.search_job_status(search_job)
 

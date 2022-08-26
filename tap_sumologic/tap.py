@@ -201,8 +201,10 @@ class TapSumoLogic(Tap):
                 schema[field_name]["type"].append("integer")
             elif field_type == "double":
                 schema[field_name]["type"].append("number")
-            elif field_type == "boolean":
-                schema[field_name]["type"].append("boolean")
+            # a potential bug in the SDK will turn all booleans to True unless
+            # this is commented out. This can be uncommented when the fix is implemented
+            # elif field_type == "boolean":
+            #     schema[field_name]["type"].append("boolean")
 
             if key_field:
                 key_properties.append(field_name)
