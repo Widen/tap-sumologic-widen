@@ -72,6 +72,7 @@ tap-sumologic --about
 #### Stream level config options
 - `query`: str: required: the Sumo Logic Search Job query. Any query that works in the Sumo Logic UI should work in the api.
 - `table_name`: str: required: the name for the table/stream.
+- `query_result_type`: str: optional: The type of query result to return. Defaults to `messages`. Must be one of `messages` or `records`.
 - `by_receipt_time`: bool: optional: Define as true to run the search using receipt time. Defaults to `false`.
 - `auto_parsing_mode`: str: optional: This enables dynamic parsing, when specified as 
   intelligent, Sumo automatically runs field extraction on your JSON log messages when 
