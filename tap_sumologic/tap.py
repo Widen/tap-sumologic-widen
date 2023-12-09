@@ -79,6 +79,16 @@ class TapSumoLogic(Tap):
                         description="The name for the table/stream.",
                     ),
                     th.Property(
+                        "query_result_type",
+                        th.StringType,
+                        required=False,
+                        default="messages",
+                        description="One of 'records' or 'messages'. Default='messages'. " \
+                                    "Records are the result of a query with aggregation" \
+                                    ". Messages are the result of a query without " \
+                                    "aggregation.",
+                    ),
+                    th.Property(
                         "by_receipt_time",
                         th.BooleanType,
                         default=False,  # type: ignore
@@ -136,10 +146,17 @@ class TapSumoLogic(Tap):
                 self.logger.info("No schema found. Inferring schema from API call.")
                 schema = self.get_schema_for_table(stream)
 
+            if stream["query_result_type"] not in ("records", "messages"):
+                raise ValueError(
+                    f"Invalid query_result_type: {stream['query_result_type']}. "
+                    "Must be one of 'records' or 'messages'."
+                )
+
             streams.append(
                 SearchJobStream(
                     tap=self,
                     name=stream["table_name"],
+                    result_type=stream["query_result_type"],
                     primary_keys=stream.get(
                         "primary_keys", self.config.get("primary_keys", schema['key_properties'])
                     ),
@@ -185,6 +202,7 @@ class TapSumoLogic(Tap):
             time_zone,
             table_config["by_receipt_time"],
             table_config["auto_parsing_mode"],
+            table_config["query_result_type"]
         )
 
         key_properties = []

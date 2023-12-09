@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tap-sumologic"
-version = "0.0.1"
+version = "0.0.2"
 description = "`tap-sumologic` is a Singer tap for sumologic, built with the Meltano SDK for Singer Taps."
 authors = ["Josh Lloyd"]
 keywords = [
@@ -10,9 +10,9 @@ keywords = [
 license = "Apache 2.0"
 
 [tool.poetry.dependencies]
-python = "<3.11,>=3.7.1"
+python = "<3.12,>=3.7.1"
 requests = "^2.25.1"
-singer-sdk = "^0.8.0"
+singer-sdk = "^0.33.0"
 genson = "^1.2.2"
 requests-mock = "^1.9.3"
 

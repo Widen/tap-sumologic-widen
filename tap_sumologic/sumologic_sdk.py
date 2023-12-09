@@ -116,14 +116,14 @@ class SumoLogic(object):
         r = self.get("/search/jobs/" + str(search_job["id"]))
         return json.loads(r.text)
 
-    def search_job_records(self, search_job, limit=None, offset=0):
+    def search_job_records(self, search_job, result_type, limit=None, offset=0):
         """Get the aggregate records of a Sumo Logic Search Job."""
         params = {"limit": limit, "offset": offset}
-        r = self.get("/search/jobs/" + str(search_job["id"]) + "/records", params)
+        r = self.get(f"/search/jobs/{search_job['id']}/{result_type}", params)
         return json.loads(r.text)
 
     def get_sumologic_fields(
-        self, q, from_time, to_time, time_zone, by_receipt_time, auto_parsing_mode
+        self, q, from_time, to_time, time_zone, by_receipt_time, auto_parsing_mode, result_type
     ):
         """Get the fields from a Sumo Logic Search Job."""
         fields = []
@@ -147,7 +147,7 @@ class SumoLogic(object):
         self.logger.info(status["state"])
 
         if status["state"] in ["DONE GATHERING RESULTS", "GATHERING RESULTS"]:
-            response = self.search_job_records(search_job, limit=1)
+            response = self.search_job_records(search_job, result_type, limit=1)
 
             fields = response["fields"]
 

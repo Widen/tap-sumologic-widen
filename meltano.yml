@@ -29,6 +29,7 @@ plugins:
       time_zone: UTC
       tables:
       - table_name: example_table_name
+        query_result_type: records
         query: >
           *
           | count by _sourceCategory
@@ -36,3 +37,6 @@ plugins:
   - name: target-jsonl
     variant: andyh1203
     pip_url: target-jsonl
+environments:
+  - name: default
+default_environment: default

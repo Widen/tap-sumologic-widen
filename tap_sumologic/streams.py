@@ -14,6 +14,7 @@ class SearchJobStream(SumoLogicStream):
         self,
         tap: Any,
         name: str,
+        result_type: str,
         primary_keys: list = None,
         replication_key: str = None,
         schema: dict = None,
@@ -40,6 +41,7 @@ class SearchJobStream(SumoLogicStream):
             primary_keys = []
 
         self.name = name
+        self.result_type = result_type
         self.primary_keys = primary_keys
         self.replication_key = replication_key
         self.query = query
@@ -90,18 +92,18 @@ class SearchJobStream(SumoLogicStream):
         self.logger.info(status["state"])
 
         if status["state"] == "DONE GATHERING RESULTS":
-            record_count = status["recordCount"]
+            record_count = status[f"{self.result_type[:-1]}Count"]
             count = 0
             while count < record_count:
                 self.logger.info(
-                    "Get records %d of %d, limit=%d", count, record_count, limit
+                    f"Get {self.result_type} {count} of {record_count}, limit={limit}"
                 )
                 response = self.conn.search_job_records(
-                    search_job, limit=limit, offset=count
+                    search_job, self.result_type, limit=limit, offset=count
                 )
-                self.logger.info("Got records %d of %d", count, record_count)
+                self.logger.info(f"Got {self.result_type} {count} of {record_count}")
 
-                recs = response["records"]
+                recs = response[self.result_type]
                 # extract the result maps to put them in the list of records
                 for rec in recs:
                     records.append({**rec["map"], **custom_columns})
