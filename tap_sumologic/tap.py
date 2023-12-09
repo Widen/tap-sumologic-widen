@@ -165,10 +165,7 @@ class TapSumoLogic(Tap):
                     tap=self,
                     name=stream["table_name"],
                     result_type=stream["query_result_type"],
-                    primary_keys=stream.get(
-                        "primary_keys",
-                        self.config.get("primary_keys", schema["key_properties"]),
-                    ),
+                    primary_keys=stream["primary_keys"] or schema["key_properties"],
                     replication_key=stream.get(
                         "replication_key", self.config.get("replication_key", "")
                     ),
@@ -243,7 +240,6 @@ class TapSumoLogic(Tap):
         key_properties += ["start_date", "end_date", "time_zone"]
         if table_config["query_result_type"] == "messages":
             key_properties += ["_messagetime", "_messageid"]
-        key_properties += table_config["primary_keys"]
 
         return {
             "type": "object",

@@ -32,7 +32,7 @@ plugins:
         query_result_type: records
         query: >
           *
-          | count by _sourceCategory
+          | count by _collector
   loaders:
   - name: target-jsonl
     variant: andyh1203
