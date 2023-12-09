@@ -243,7 +243,7 @@ class TapSumoLogic(Tap):
         key_properties += ["start_date", "end_date", "time_zone"]
         if table_config["query_result_type"] == "messages":
             key_properties += ["_messagetime", "_messageid"]
-        key_properties += table_config.get("primary_keys", [])
+        key_properties += table_config["primary_keys"]
 
         return {
             "type": "object",
