@@ -123,7 +123,14 @@ class SumoLogic(object):
         return json.loads(r.text)
 
     def get_sumologic_fields(
-        self, q, from_time, to_time, time_zone, by_receipt_time, auto_parsing_mode, result_type
+        self,
+        q,
+        from_time,
+        to_time,
+        time_zone,
+        by_receipt_time,
+        auto_parsing_mode,
+        result_type,
     ):
         """Get the fields from a Sumo Logic Search Job."""
         fields = []

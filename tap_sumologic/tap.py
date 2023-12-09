@@ -83,10 +83,18 @@ class TapSumoLogic(Tap):
                         th.StringType,
                         required=False,
                         default="messages",
-                        description="One of 'records' or 'messages'. Default='messages'. " \
-                                    "Records are the result of a query with aggregation" \
-                                    ". Messages are the result of a query without " \
-                                    "aggregation.",
+                        description="One of 'records' or 'messages'. Default='messages'. "
+                        "Records are the result of a query with aggregation"
+                        ". Messages are the result of a query without "
+                        "aggregation.",
+                    ),
+                    th.Property(
+                        "primary_keys",
+                        th.ArrayType(th.StringType),
+                        required=False,
+                        default=[],
+                        description="Additional fields to include in the primary keys."
+                        " Defaults to `[]`.",
                     ),
                     th.Property(
                         "by_receipt_time",
@@ -158,7 +166,8 @@ class TapSumoLogic(Tap):
                     name=stream["table_name"],
                     result_type=stream["query_result_type"],
                     primary_keys=stream.get(
-                        "primary_keys", self.config.get("primary_keys", schema['key_properties'])
+                        "primary_keys",
+                        self.config.get("primary_keys", schema["key_properties"]),
                     ),
                     replication_key=stream.get(
                         "replication_key", self.config.get("replication_key", "")
@@ -202,7 +211,7 @@ class TapSumoLogic(Tap):
             time_zone,
             table_config["by_receipt_time"],
             table_config["auto_parsing_mode"],
-            table_config["query_result_type"]
+            table_config["query_result_type"],
         )
 
         key_properties = []
@@ -232,6 +241,9 @@ class TapSumoLogic(Tap):
         schema["end_date"] = base_type
         schema["time_zone"] = base_type
         key_properties += ["start_date", "end_date", "time_zone"]
+        if table_config["query_result_type"] == "messages":
+            key_properties += ["_messagetime", "_messageid"]
+        key_properties += table_config.get("primary_keys", [])
 
         return {
             "type": "object",
