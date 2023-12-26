@@ -116,10 +116,53 @@ class SumoLogic(object):
         r = self.get("/search/jobs/" + str(search_job["id"]))
         return json.loads(r.text)
 
-    def search_job_records(self, search_job, result_type, limit=None, offset=0):
+    def search_job_records(self, search_job, query_type, limit=None, offset=0):
         """Get the aggregate records of a Sumo Logic Search Job."""
         params = {"limit": limit, "offset": offset}
-        r = self.get(f"/search/jobs/{search_job['id']}/{result_type}", params)
+        r = self.get(f"/search/jobs/{search_job['id']}/{query_type}", params)
+        return json.loads(r.text)
+
+    def metrics_query(
+        self,
+        query,
+        from_time,
+        to_time,
+        quantization,
+        rollup,
+        timeshift,
+    ):
+        """Request a Sumo Logic Metrics Query."""
+        params = {
+            "queries": [
+                {
+                    "rowId": "A",
+                    "query": query,
+                    "quantization": quantization,
+                    "rollup": rollup,
+                    "timeshift": timeshift,
+                }
+            ],
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "Iso8601TimeRangeBoundary",
+                    # todo: convert to other timezones according to `time_zone`
+                    "iso8601Time": from_time + ".00+00:00",
+                },
+                "to": {
+                    "type": "Iso8601TimeRangeBoundary",
+                    # todo: convert to other timezones according to `time_zone`
+                    "iso8601Time": to_time + ".00+00:00",
+                },
+            },
+        }
+        if quantization is None:
+            del params["queries"][0]["quantization"]
+        if rollup is None:
+            del params["queries"][0]["rollup"]
+        if timeshift is None:
+            del params["queries"][0]["timeshift"]
+        r = self.post("/metricsQueries", params)
         return json.loads(r.text)
 
     def get_sumologic_fields(
@@ -130,7 +173,55 @@ class SumoLogic(object):
         time_zone,
         by_receipt_time,
         auto_parsing_mode,
-        result_type,
+        query_type,
+        quantization=None,
+        rollup=None,
+        timeshift=None,
+    ):
+        """Get the fields from a Sumo Logic Search Job or Metrics Query.
+
+        Args:
+            q: Sumo Logic query
+            from_time: start time
+            to_time: end time
+            time_zone: timezone
+            by_receipt_time: whether to query by receipt time
+            auto_parsing_mode: auto parsing mode
+            query_type: type of query: records, messages, or metrics
+            quantization: quantization
+            rollup: rollup
+            timeshift: timeshift
+
+        """
+        if query_type in ("records", "messages"):
+            return self.get_search_job_fields(
+                q,
+                from_time,
+                to_time,
+                time_zone,
+                by_receipt_time,
+                auto_parsing_mode,
+                query_type,
+            )
+        elif query_type == "metrics":
+            return self.get_metrics_query_fields(
+                q,
+                from_time,
+                to_time,
+                quantization,
+                rollup,
+                timeshift,
+            )
+
+    def get_search_job_fields(
+        self,
+        q,
+        from_time,
+        to_time,
+        time_zone,
+        by_receipt_time,
+        auto_parsing_mode,
+        query_type,
     ):
         """Get the fields from a Sumo Logic Search Job."""
         fields = []
@@ -154,8 +245,33 @@ class SumoLogic(object):
         self.logger.info(status["state"])
 
         if status["state"] in ["DONE GATHERING RESULTS", "GATHERING RESULTS"]:
-            response = self.search_job_records(search_job, result_type, limit=1)
+            response = self.search_job_records(search_job, query_type, limit=1)
 
             fields = response["fields"]
 
         return fields
+
+    def get_metrics_query_fields(
+        self,
+        query,
+        from_time,
+        to_time,
+        quantization,
+        rollup,
+        timeshift,
+    ):
+        """Get the fields from a Sumo Logic Metrics Query."""
+        metrics_query = self.metrics_query(
+            query,
+            from_time,
+            to_time,
+            quantization,
+            rollup,
+            timeshift,
+        )
+
+        if len(metrics_query["errors"]["errors"]) > 0:
+            self.logger.error(metrics_query["errors"])
+            raise Exception(f"Request error: {metrics_query['errors']}")
+
+        return metrics_query["queryResult"][0]["timeSeriesList"]["timeSeries"]

@@ -16,6 +16,7 @@ SAMPLE_CONFIG = {
     "tables": [
         {
             "query": "sumologic query | count by foo",
+            "query_type": "records",
             "table_name": "foo_table",
             "by_receipt_time": False,
             "auto_parsing_mode": "autoparsingmode",
@@ -30,6 +31,14 @@ records_json = {
     ],
     "records": [{"map": {"_count": "90", "_sourcecategory": "service"}}],
 }
+#
+# messages_json = {
+#     "fields": [
+#         {"name": "_sourcecategory", "fieldType": "string", "keyField": True},
+#         {"name": "_count", "fieldType": "int", "keyField": False},
+#     ],
+#     "messages": [{"map": {"_count": "90", "_sourcecategory": "service"}}],
+# }
 
 
 def test_standard_tap_tests(requests_mock):
@@ -64,6 +73,14 @@ def test_standard_tap_tests(requests_mock):
         "https://example.com/v1/search/jobs/123ID/records?limit=10000&offset=0",
         json=records_json,
     )
+    # requests_mock.get(
+    #     "https://example.com/v1/search/jobs/123ID/messages?limit=1&offset=0",
+    #     json=records_json,
+    # )
+    # requests_mock.get(
+    #     "https://example.com/v1/search/jobs/123ID/messages?limit=10000&offset=0",
+    #     json=records_json,
+    # )
     tests = get_standard_tap_tests(TapSumoLogic, config=SAMPLE_CONFIG)
     for test in tests:
         test()

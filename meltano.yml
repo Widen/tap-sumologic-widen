@@ -24,9 +24,6 @@ plugins:
     - name: tables
       kind: array
     config:
-      start_date: 2023-12-08T00:00:00
-      end_date: 2023-12-08T00:00:01
-      time_zone: UTC
       tables:
       - table_name: example_table_name
         query_result_type: records

@@ -79,11 +79,12 @@ class TapSumoLogic(Tap):
                         description="The name for the table/stream.",
                     ),
                     th.Property(
-                        "query_result_type",
+                        "query_type",
                         th.StringType,
                         required=False,
                         default="messages",
-                        description="One of 'records' or 'messages'. Default='messages'. "
+                        description="One of 'records', 'messages', 'metrics'. "
+                        "Default='messages'. "
                         "Records are the result of a query with aggregation"
                         ". Messages are the result of a query without "
                         "aggregation.",
@@ -101,7 +102,8 @@ class TapSumoLogic(Tap):
                         th.BooleanType,
                         default=False,  # type: ignore
                         description="Define as true to run the search using "
-                        "receipt time.",
+                        "receipt time. Only applicable on 'records' and 'messages' "
+                        "queries.",
                     ),
                     th.Property(
                         "auto_parsing_mode",
@@ -109,7 +111,31 @@ class TapSumoLogic(Tap):
                         default="intelligent",  # type: ignore
                         description="The value to provide for the autoParsingMode "
                         "parameter. Default='intelligent' to match the "
-                        "behavior of the Sumologic Search Job UI.",
+                        "behavior of the Sumologic Search Job UI. Only applicable on "
+                        "'records' and 'messages' queries.",
+                    ),
+                    th.Property(
+                        "quantization",
+                        th.IntegerType,
+                        description="Segregates time series data by time period. This "
+                        "allows you to create aggregated results in buckets of fixed "
+                        "intervals (for example, 5-minute intervals). The value is in "
+                        "milliseconds. Only applicable on 'metrics' queries.",
+                    ),
+                    th.Property(
+                        "rollup",
+                        th.StringType,
+                        description="Can be Avg, Sum, Min, Max, Count or None. Only "
+                        "applicable on 'metrics' queries.",
+                    ),
+                    th.Property(
+                        "timeshift",
+                        th.IntegerType,
+                        description="Shifts the time series from your metrics query by "
+                        "the specified amount of time. This can help when comparing a "
+                        "time series across multiple time periods. Specified as a "
+                        "signed duration in milliseconds. Only applicable on 'metrics' "
+                        "queries.",
                     ),
                     th.Property(
                         "schema",
@@ -154,9 +180,9 @@ class TapSumoLogic(Tap):
                 self.logger.info("No schema found. Inferring schema from API call.")
                 schema = self.get_schema_for_table(stream)
 
-            if stream["query_result_type"] not in ("records", "messages"):
+            if stream["query_type"] not in ("records", "messages", "metrics"):
                 raise ValueError(
-                    f"Invalid query_result_type: {stream['query_result_type']}. "
+                    f"Invalid query_type: {stream['query_type']}. "
                     "Must be one of 'records' or 'messages'."
                 )
 
@@ -164,7 +190,7 @@ class TapSumoLogic(Tap):
                 SearchJobStream(
                     tap=self,
                     name=stream["table_name"],
-                    result_type=stream["query_result_type"],
+                    query_type=stream["query_type"],
                     primary_keys=stream["primary_keys"] or schema["key_properties"],
                     replication_key=stream.get(
                         "replication_key", self.config.get("replication_key", "")
@@ -173,6 +199,9 @@ class TapSumoLogic(Tap):
                     query=stream["query"],
                     by_receipt_time=stream["by_receipt_time"],
                     auto_parsing_mode=stream["auto_parsing_mode"],
+                    quantization=stream.get("quantization"),
+                    rollup=stream.get("rollup"),
+                    timeshift=stream.get("timeshift"),
                 )
             )
 
@@ -190,7 +219,8 @@ class TapSumoLogic(Tap):
         """
         schema = {}
         q: str = table_config["query"]
-        q += " | limit 1"
+        if table_config["query_type"] in ("records", "messages"):
+            q += " | limit 1"
         start_date = self.config["start_date"]
         end_date = self.config["end_date"]
         time_zone = self.config["time_zone"]
@@ -208,41 +238,58 @@ class TapSumoLogic(Tap):
             time_zone,
             table_config["by_receipt_time"],
             table_config["auto_parsing_mode"],
-            table_config["query_result_type"],
+            table_config["query_type"],
+            table_config.get("quantization"),
+            table_config.get("rollup"),
+            table_config.get("timeshift"),
         )
 
-        key_properties = []
-        for field in fields:
-            field_name = field["name"]
-            field_type = field["fieldType"]
-            key_field = field["keyField"]
+        if table_config["query_type"] in ("records", "messages"):
+            key_properties = []
+            for field in fields:
+                field_name = field["name"]
+                field_type = field["fieldType"]
+                key_field = field["keyField"]
 
-            schema[field_name] = copy.deepcopy(base_type)
+                schema[field_name] = copy.deepcopy(base_type)
 
-            if field_type == "int":
-                schema[field_name]["type"].append("integer")
-            elif field_type == "long":
-                schema[field_name]["type"].append("integer")
-            elif field_type == "double":
-                schema[field_name]["type"].append("number")
-            # a potential bug in the SDK will turn all booleans to True unless
-            # this is commented out. This can be uncommented when the fix is implemented
-            # elif field_type == "boolean":
-            #     schema[field_name]["type"].append("boolean")
+                if field_type == "int":
+                    schema[field_name]["type"].append("integer")
+                elif field_type == "long":
+                    schema[field_name]["type"].append("integer")
+                elif field_type == "double":
+                    schema[field_name]["type"].append("number")
+                # a potential bug in the SDK will turn all booleans to True unless
+                # this is commented out. This can be uncommented when the fix is
+                # implemented
+                # elif field_type == "boolean":
+                #     schema[field_name]["type"].append("boolean")
 
-            if key_field:
-                key_properties.append(field_name)
+                if key_field:
+                    key_properties.append(field_name)
 
-        # add start and end date
-        schema["start_date"] = base_type
-        schema["end_date"] = base_type
-        schema["time_zone"] = base_type
-        key_properties += ["start_date", "end_date", "time_zone"]
-        if table_config["query_result_type"] == "messages":
-            key_properties += ["_messagetime", "_messageid"]
+            # add start and end date
+            schema["start_date"] = base_type
+            schema["end_date"] = base_type
+            schema["time_zone"] = base_type
+            key_properties += ["start_date", "end_date", "time_zone"]
+            if table_config["query_type"] == "messages":
+                key_properties += ["_messagetime", "_messageid"]
 
-        return {
-            "type": "object",
-            "properties": schema,
-            "key_properties": key_properties,
-        }
+            return {
+                "type": "object",
+                "properties": schema,
+                "key_properties": key_properties,
+            }
+
+        elif table_config["query_type"] == "metrics":
+            return {
+                "type": "object",
+                "properties": {
+                    "metricDefinition": {"type": ["object", "null"]},
+                    "points": {"type": ["object", "null"]},
+                },
+                "key_properties": [],
+            }
+
+        return {}
