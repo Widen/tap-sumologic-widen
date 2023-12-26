@@ -289,7 +289,7 @@ class TapSumoLogic(Tap):
                     "metricDefinition": {"type": ["object", "null"]},
                     "points": {"type": ["object", "null"]},
                 },
-                "key_properties": [],
+                "key_properties": ["metricDefinition", "points"],
             }
 
         return {}
